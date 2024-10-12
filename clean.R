@@ -180,3 +180,5 @@ df <- list(bbdd_2015, bbdd_2016, bbdd_2017, bbdd_2018, bbdd_2019,
 
 # combina todo
 df <- do.call(rbind, df)
+
+saveRDS(df, file = "Ingresos_por_materia_penal_2015_2024.rds")
