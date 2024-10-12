@@ -9,8 +9,9 @@ Este proyecto tiene como objetivo automatizar la importación, limpieza y unific
 
 Estos son datos publicos, por lo tanto si quieres consultados en R, usa las siguientes lineas de codigo:
 
-"url <- "https://github.com/jbarriosl/statistics-tesis-data/raw/main/Ingresos_por_materia_penal_2015_2024.rds"
-datos <- readRDS(url(url))"
+	url <- "https://github.com/jbarriosl/statistics-tesis-data/raw/main/Ingresos_por_materia_penal_2015_2024.rds"
+	datos <- readRDS(url(url))"
+
 
 ## Dependencias
 
