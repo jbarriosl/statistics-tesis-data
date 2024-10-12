@@ -1,20 +1,32 @@
-# Statistics Tesis Data - Jbarriosl y Daniel Vilches
+# Datos para tesis de estadistica - Juan Barrios y Daniel Vilchez
+Contacto: jbarriosl@uc.cl
 
-Este repositorio contiene un script que reune, ordena y limpia, los archivos de ingreso de causas al sistema procesal chileno, desde 2015 hasta 2024.
+# Proyecto de Integración de Bases de Datos Judiciales
 
-## Contenido del Repositorio
+Este proyecto tiene como objetivo automatizar la importación, limpieza y unificación de múltiples bases de datos judiciales, que se encuentran en archivos CSV comprimidos. El script procesa los datos, corrige inconsistencias en los nombres de columnas y combina todas las bases de datos en un solo dataframe unificado para su análisis posterior.
 
-- **Archive.zip**: Archivo comprimido que contiene todos los archivos usados (input
-- **Ingresos_por_materia_penal_2015_2024.rds**: Archivo de datos principal en formato `.rds`, que contiene toda la información sobre ingresos por materias penales desde el año 2015 hasta 2024.
-- **clean.R**: Script de R utilizado para limpiar y estructurar los datos
+# Consulta de datos (script en R)
 
-## Requisitos previos
+Estos son datos publicos, por lo tanto si quieres consultados en R, usa las siguientes lineas de codigo:
 
-Para trabajar con este repositorio, asegúrate de tener instalado lo siguiente:
-- **R y RStudio**: para ejecutar el análisis y los scripts.
-- **Git** y **Git LFS**: para manejar archivos grandes y en caso de clonar el repositorio.
+"url <- "https://github.com/jbarriosl/statistics-tesis-data/raw/main/Ingresos_por_materia_penal_2015_2024.rds"
+datos <- readRDS(url(url))"
 
-## Cargar los datos en R
-Para cargar el archivo de datos Ingresos_por_materia_penal_2015_2024.rds en tu entorno de R, utiliza el siguiente código:
+## Dependencias
 
-datos <- readRDS("Ingresos_por_materia_penal_2015_2024.rds")
+Este proyecto requiere las siguientes librerías de R:
+
+	1. dplyr: Para la manipulación de datos.
+	2. rio: Para la importación de archivos CSV.
+	
+## Ejecución del Script
+
+Si necesitas o deseas ejecutar el script, sigue los siguientes pasos:
+
+	1.	Asegúrate de tener instaladas las librerías necesarias (dplyr, rio).
+	2.	Ejecuta el archivo "script.r"" completo desde tu entorno de R.
+
+El resultado final será un único dataframe que contiene la información consolidada de todas las bases de datos originales, listo para su análisis.
+
+
+

@@ -1,99 +1,182 @@
-#library(readxl)
-#library(readr)
-library(stringr)
 library(dplyr)
-library(lubridate)
 library(rio)
-library(tidyr)
 
 zipF <- "Archive.zip"
 outDir <-"Archive"
 unzip(zipF,exdir=outDir)
 
+# importa las bbdd -------------------------------------------------------------
+archivos <- list.files("Archive",
+                       pattern = "Ingresos por Materia Penal .*\\.csv",
+                       full.names = TRUE)
+for (archivo in archivos) {
+  nombre_base <- gsub(".*Ingresos por Materia Penal (\\d{4}).*|.*Ingresos por Materia Penal (.*-.*)\\.csv",
+                      "\\1\\2",
+                      basename(archivo))
+  nombre_base <- ifelse(nombre_base == "ene-jun 2024", "2024", nombre_base)
+  nombre_base <- paste0("bbdd_", nombre_base)
+  assign(nombre_base, rio::import(archivo))
+}
 
-Sys.setlocale("LC_TIME", "es_ES.UTF-8")
+nombre_bases = ls(pattern = "bbdd_")
 
-bbdd_2015 <- rio::import("Archive/Ingresos por Materia Penal 2015.csv")
-bbdd_2016 <- rio::import("Archive/Ingresos por Materia Penal 2016.csv")
-bbdd_2017 <- rio::import("Archive/Ingresos por Materia Penal 2017.csv")
-bbdd_2018 <- rio::import("Archive/Ingresos por Materia Penal 2018.csv")
-bbdd_2019 <- rio::import("Archive/Ingresos por Materia Penal 2019.csv")
-bbdd_2020 <- rio::import("Archive/Ingresos por Materia Penal 2020.csv")
-bbdd_2021 <- rio::import("Archive/Ingresos por Materia Penal 2021.csv")
-bbdd_2022 <- rio::import("Archive/Ingresos por Materia Penal 2022.csv")
-bbdd_2023 <- rio::import("Archive/Ingresos por Materia Penal 2023.csv")
-bbdd_2024 <- rio::import("Archive/Ingresos por Materia Penal ene-jun 2024.csv")
+# limpieza nombres bbdds ------------------------------------------------------
 
-########################## MANEJO BBDD ####################################
+# Función para realizar las transformaciones en cada dataframe
+aplicar_transformaciones <- function(df) {
+  # Reemplazos de nombres de columnas para corregir problemas específicos
+  reemplazos <- list(
+    "A¥O INGRESO" = "AÑO INGRESO",
+    "A\xa5O INGRESO" = "AÑO INGRESO",
+    "A\xd1O INGRESO" = "AÑO INGRESO",
+    "AÃ‘O INGRESO" = "AÑO INGRESO",
+    "AÃ\u0091O INGRESO" = "AÑO INGRESO",
+    "AÃ\u0091O" = "AÑO",
+    "GLOSA MATERIA" = "MATERIA",
+    "CÓDIGO CORTE" = "COD. CORTE",
+    "CÃ\u0093DIGO TRIBUNAL" = "COD. TRIBUNAL",
+    "CÃ\u0093DIGO CORTE" = "COD. CORTE",
+    "CÓDIGO TRIBUNAL" = "COD. TRIBUNAL",
+    "Nø" = "N",
+    "N°" = "N",
+    "TOTAL INGRESOS POR MATERIAS(*)" = "TOTAL INGRESOS POR MATERIAS"
+  )
+  
+  # Convertir los nombres de las columnas a UTF-8 para evitar problemas de codificación
+  colnames(df) <- iconv(colnames(df), from = "latin1", to = "UTF-8", sub = "")
+  
+  # Realizar los reemplazos de nombres de columnas según el diccionario
+  for (col_name in names(reemplazos)) {
+    new_name <- reemplazos[[col_name]]
+    if (col_name %in% colnames(df)) {
+      colnames(df)[colnames(df) == col_name] <- new_name
+    }
+  }
+  
+  # Convertir a minúsculas y limpiar nombres
+  colnames(df) <- colnames(df) %>%
+    tolower() %>%
+    gsub("\\.", "", .) %>%
+    gsub(" ", "_", .)
+  
+  df$rit <- as.character(df$rit)
+  return(df)
+}
 
-# colnames(bbdd_2015)
+# Aplicar las transformaciones a todos los dataframes en el entorno
+for (base in nombre_bases) {
+  df <- get(base)
+  df <- aplicar_transformaciones(df)
+  assign(base, df)
+}
+
+
+# unir -------------------------------------------------------------------------
+# selecciona las columnas a utilizar
 bbdd_2015 <- bbdd_2015[, -c(1, 13, 14)]
-# columnas[[1]]
 bbdd_2016 <- bbdd_2016[, -c(1, 13, 14)]
-# columnas[[2]]
 bbdd_2017 <- bbdd_2017[, -c(1, 13, 14)]
-# columnas[[3]]
 bbdd_2018 <- bbdd_2018[, -c(1, 13, 14)]
-# columnas[[4]]
 bbdd_2019 <- bbdd_2019[, -c(1, 13, 14)]
-# columnas[[5]]
 bbdd_2020 <- bbdd_2020[, -c(1, 13)]
-# columnas[[6]]
 bbdd_2021 <- bbdd_2021[, -c(5, 13, 14, 15)]
-# columnas[[7]]
 bbdd_2022 <- bbdd_2022[, -c(1, 6, 8, 15, 16, 17, 18, 19)]
-# columnas[[8]]
 bbdd_2023 <- bbdd_2023[, -c(1, 6, 8, 15, 16, 17, 18, 19)]
-# columnas[[9]]
 bbdd_2024 <- bbdd_2024[, -c(1, 6, 14, 15, 16, 17, 18)]
-# columnas[[10]]
 
-colnames(bbdd_2015)[colnames(bbdd_2015) == "A¥O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2015)[colnames(bbdd_2015) == "A\xa5O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2016)[colnames(bbdd_2016) == "A¥O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2016)[colnames(bbdd_2016) == "A\xa5O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2017)[colnames(bbdd_2017) == "A¥O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2017)[colnames(bbdd_2017) == "A\xa5O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2018)[colnames(bbdd_2018) == "A¥O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2018)[colnames(bbdd_2018) == "A\xa5O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2019)[colnames(bbdd_2019) == "A¥O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2019)[colnames(bbdd_2019) == "A\xa5O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2020)[colnames(bbdd_2020) == "A\xd1O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2021)[colnames(bbdd_2021) == "A\xd1O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2022)[colnames(bbdd_2022) == "GLOSA MATERIA"] <- "MATERIA"
-colnames(bbdd_2022)[colnames(bbdd_2022) == "AÃ‘O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2023)[colnames(bbdd_2023) == "GLOSA MATERIA"] <- "MATERIA"
-colnames(bbdd_2023)[colnames(bbdd_2023) == "AÃ‘O INGRESO"] <- "AÑO INGRESO"
-
-colnames(bbdd_2024)[colnames(bbdd_2024) == "GLOSA MATERIA"] <- "MATERIA"
-colnames(bbdd_2024)[colnames(bbdd_2024) == "AÃ‘O INGRESO"] <- "AÑO INGRESO"
-colnames(bbdd_2024)[colnames(bbdd_2024) == "CÓDIGO CORTE"] <- "COD. CORTE"
-colnames(bbdd_2024)[colnames(bbdd_2024) == "CÓDIGO TRIBUNAL"] <- "COD. TRIBUNAL"
-
-
-
-dataframes <- list(bbdd_2015, bbdd_2016, bbdd_2017, bbdd_2018, bbdd_2019, 
+df <- list(bbdd_2015, bbdd_2016, bbdd_2017, bbdd_2018, bbdd_2019, 
                    bbdd_2020, bbdd_2021, bbdd_2022, bbdd_2023, bbdd_2024)
 
+# combina todoen base a todo lo visto y siendo este el codigo final, redacta el readme
 
-bbdd_total_ingreso <- do.call(rbind, dataframes)
+library(dplyr)
+library(rio)
 
-# corrige nombres de las columnas por clean code
-colnames(bbdd_total_ingreso) <- colnames(bbdd_total_ingreso) %>%
-  tolower() %>%
-  gsub("\\.", "", .) %>%
-  gsub(" ", "_", .)
+zipF <- "Archive.zip"
+outDir <-"Archive"
+unzip(zipF,exdir=outDir)
+
+# importa las bbdd -------------------------------------------------------------
+archivos <- list.files("Archive",
+                       pattern = "Ingresos por Materia Penal .*\\.csv",
+                       full.names = TRUE)
+for (archivo in archivos) {
+  nombre_base <- gsub(".*Ingresos por Materia Penal (\\d{4}).*|.*Ingresos por Materia Penal (.*-.*)\\.csv",
+                      "\\1\\2",
+                      basename(archivo))
+  nombre_base <- ifelse(nombre_base == "ene-jun 2024", "2024", nombre_base)
+  nombre_base <- paste0("bbdd_", nombre_base)
+  assign(nombre_base, rio::import(archivo))
+}
+
+nombre_bases = ls(pattern = "bbdd_")
+
+# limpieza nombres bbdds ------------------------------------------------------
+
+# Función para realizar las transformaciones en cada dataframe
+aplicar_transformaciones <- function(df) {
+  # Reemplazos de nombres de columnas para corregir problemas específicos
+  reemplazos <- list(
+    "A¥O INGRESO" = "AÑO INGRESO",
+    "A\xa5O INGRESO" = "AÑO INGRESO",
+    "A\xd1O INGRESO" = "AÑO INGRESO",
+    "AÃ‘O INGRESO" = "AÑO INGRESO",
+    "AÃ\u0091O INGRESO" = "AÑO INGRESO",
+    "AÃ\u0091O" = "AÑO",
+    "GLOSA MATERIA" = "MATERIA",
+    "CÓDIGO CORTE" = "COD. CORTE",
+    "CÃ\u0093DIGO TRIBUNAL" = "COD. TRIBUNAL",
+    "CÃ\u0093DIGO CORTE" = "COD. CORTE",
+    "CÓDIGO TRIBUNAL" = "COD. TRIBUNAL",
+    "Nø" = "N",
+    "N°" = "N",
+    "TOTAL INGRESOS POR MATERIAS(*)" = "TOTAL INGRESOS POR MATERIAS"
+  )
+  
+  # Convertir los nombres de las columnas a UTF-8 para evitar problemas de codificación
+  colnames(df) <- iconv(colnames(df), from = "latin1", to = "UTF-8", sub = "")
+  
+  # Realizar los reemplazos de nombres de columnas según el diccionario
+  for (col_name in names(reemplazos)) {
+    new_name <- reemplazos[[col_name]]
+    if (col_name %in% colnames(df)) {
+      colnames(df)[colnames(df) == col_name] <- new_name
+    }
+  }
+  
+  # Convertir a minúsculas y limpiar nombres
+  colnames(df) <- colnames(df) %>%
+    tolower() %>%
+    gsub("\\.", "", .) %>%
+    gsub(" ", "_", .)
+  
+  df$rit <- as.character(df$rit)
+  return(df)
+}
+
+# Aplicar las transformaciones a todos los dataframes en el entorno
+for (base in nombre_bases) {
+  df <- get(base)
+  df <- aplicar_transformaciones(df)
+  assign(base, df)
+}
 
 
+# unir -------------------------------------------------------------------------
+# selecciona las columnas a utilizar
+bbdd_2015 <- bbdd_2015[, -c(1, 13, 14)]
+bbdd_2016 <- bbdd_2016[, -c(1, 13, 14)]
+bbdd_2017 <- bbdd_2017[, -c(1, 13, 14)]
+bbdd_2018 <- bbdd_2018[, -c(1, 13, 14)]
+bbdd_2019 <- bbdd_2019[, -c(1, 13, 14)]
+bbdd_2020 <- bbdd_2020[, -c(1, 13)]
+bbdd_2021 <- bbdd_2021[, -c(5, 13, 14, 15)]
+bbdd_2022 <- bbdd_2022[, -c(1, 6, 8, 15, 16, 17, 18, 19)]
+bbdd_2023 <- bbdd_2023[, -c(1, 6, 8, 15, 16, 17, 18, 19)]
+bbdd_2024 <- bbdd_2024[, -c(1, 6, 14, 15, 16, 17, 18)]
 
+df <- list(bbdd_2015, bbdd_2016, bbdd_2017, bbdd_2018, bbdd_2019, 
+                   bbdd_2020, bbdd_2021, bbdd_2022, bbdd_2023, bbdd_2024)
 
-
-
+# combina todo
+df <- do.call(rbind, df)
