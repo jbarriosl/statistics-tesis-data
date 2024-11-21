@@ -1,5 +1,5 @@
-# Datos para tesis de estadistica - Juan Barrios y Daniel Vilchez
-Contacto: jbarriosl@uc.cl
+# Datos para tesis de estadistica - Juan Barrios y Daniel Vilches
+Contacto: jbarriosl@uc.cl y devilches@uc.cl
 
 # Proyecto de Integración de Bases de Datos Judiciales
 
